@@ -52,6 +52,67 @@ class VectorQuantizer {
         this.codeBookSze = codeBookSze;
     }
     
+    public void compress(String imagePath){
+
+
+        
+        int[][] imagePixels = readImage(imagePath);
+        Vector<int[][]> data = divideToblocks(imagePixels);
+        double[][] average = averageBlock(data);
+        Vector<double[][]> temp = new Vector<>();
+        temp.add(average);
+        Vector<double[][]> allAverages = splitAverage(temp);
+
+        int[][] compressedData = new int[imagePixels.length][imagePixels.length];
+
+        for (int[][] block : data) {
+            double minDis = Integer.MAX_VALUE;
+            int[][] nearestVector = null;
+            
+        //     for(int i = 0 ; i < allAverages.size() ; ++i){
+        //         double[][] t = allAverages.get(i);
+        //         double dist = calculateDistance(t, block);
+        //         if (dist < minDis) {
+        //             minDis =  dist;
+        //             nearestVector = i;
+        //         } 
+        // }
+        // compressedData.add(nearestVector);
+        }
+        
+
+
+
+
+        // Vector<int[][]> averageVecs = splitAverage(blocks);
+
+       
+    
+
+        // // make two average one is ceiled the other is floored
+        //     int[][] temp = new int[blockHeight][blockWidth];
+
+        //     for(int i = 0 ; i < average.length ; ++i){
+        //         for(int j = 0 ; i < average[i].length ; ++j){
+        //         temp[i][j] = (int) Math.ceil(average[i][j]);
+        //     }
+        // }
+        // averageVecs.add(temp);
+        // temp = new int[blockHeight][blockWidth];
+        // for(int i = 0 ; i < average.length ; ++i){
+        //         for(int j = 0 ; i < average[i].length ; ++j){
+        //         temp[i][j] = (int) Math.floor(average[i][j]);
+        //     }
+        // }
+        // averageVecs.add(temp);
+
+        
+        // // -2 because we did the first and second averages already
+        // for(int i = 0 ; i < codeBookSze-2 ; ++i){
+
+        // }
+
+    }
 
     public int[][] readImage(String imagePath) {
         
@@ -111,26 +172,13 @@ class VectorQuantizer {
     }
 
 
-    public int[][] averageBlock(Vector<int[][]> vec){
+    public double[][] averageBlock(Vector<int[][]> vec){
 
-        int[][] result = new int[blockHeight][blockWidth];
-
-        // Vector<int[][]> average = new Vector<>();
-        
-
-        // for (int[][] array : average) {
-        
-        //     for(int i = 0 ; i < array.length ; ++i){
-        //         for(int j = 0 ; j < array[i].length ; ++j){
-        //             array[i][j] = 0;
-        //         }
-
-        //      }
-        // }
+        double[][] result = new double[blockHeight][blockWidth];
 
         for(int i = 0 ; i < result.length ; ++i){
                 for(int j = 0 ; j < result[i].length ; ++j){
-                    result[i][j] = 0 ;
+                    result[i][j] =  0.0 ;
                 }
 
              }
@@ -156,7 +204,51 @@ class VectorQuantizer {
 
     }
 
-public int getnBlocks() {
+    public Vector<double[][]> splitAverage(Vector<double[][]> averages) {
+
+        Vector<double[][]> newAvr = new Vector<>();
+
+        for (double[][] ds : averages) {
+
+            double[][] temp = new double[blockHeight][blockWidth];
+            for (int i = 0; i < ds.length; ++i) {
+                for (int j = 0; j < ds[i].length; ++j) {
+                    if(ds[i][j] == Math.round(ds[i][j])){// it means that number is integer
+                        temp[i][j] = ds[i][j] + 1;
+                    }else{
+                        temp[i][j] = Math.ceil(ds[i][j]);
+                    }
+                }
+            }
+            newAvr.add(temp);
+            temp = new double[blockHeight][blockWidth];
+            for (int i = 0; i < ds.length; ++i) {
+                for (int j = 0; j < ds[i].length; ++j) {
+                    if(ds[i][j] == Math.round(ds[i][j])){// it means that number is integer
+                        temp[i][j] = ds[i][j]  - 1;
+                    }else{
+                        temp[i][j] = Math.floor(ds[i][j]);
+                    }
+                }
+            }
+            newAvr.add(temp);
+        }
+        return newAvr;
+    }
+
+
+    public double calculateDistance(double[][] avr , int[][] block){
+        double distance = 0;
+        for(int i = 0 ; i < avr.length; ++i){
+            for (int j = 0 ; j < avr[i].length ; ++j){
+                distance += Math.pow((avr[i][j] - block[i][j]), 2);
+            }
+        }
+
+        return distance;
+    }
+
+    public int getnBlocks() {
         return nBlocks;
     }
 
