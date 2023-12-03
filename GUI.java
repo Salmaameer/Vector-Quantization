@@ -2,6 +2,8 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -9,6 +11,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class GUI extends JFrame{
     JButton chooseBtn, compressBtn, decompressBtn;
     JLabel label;
+    VectorQuantizer vq = new VectorQuantizer(4, 4, 16);
+    String imgPath;
+
     
     public GUI(){
         super("Vector Quantization");
@@ -38,9 +43,21 @@ public class GUI extends JFrame{
                 
                 if(result == JFileChooser.APPROVE_OPTION){
                     File selectedFile = file.getSelectedFile();
-                    String path = selectedFile.getAbsolutePath();
-                    label.setIcon(ResizeImage(path));
+                    imgPath = selectedFile.getAbsolutePath();
+                    label.setIcon(ResizeImage(imgPath));
                 }
+            }
+        });
+
+        compressBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // try {
+                //     vq.compress(imgPath);
+                // } catch (IOException e1) {
+                //     // TODO Auto-generated catch block
+                //     e1.printStackTrace();
+                // }
             }
         });
     
