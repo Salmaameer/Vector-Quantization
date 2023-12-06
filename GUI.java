@@ -11,7 +11,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class GUI extends JFrame{
     JButton chooseBtn, compressBtn, decompressBtn;
     JLabel label;
-    VectorQuantizer vq = new VectorQuantizer(4, 4, 16);
+    VectorQuantizer vq = new VectorQuantizer(6, 6, 16);
     String imgPath;
 
     
@@ -52,14 +52,30 @@ public class GUI extends JFrame{
         compressBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // try {
-                //     vq.compress(imgPath);
-                // } catch (IOException e1) {
-                //     // TODO Auto-generated catch block
-                //     e1.printStackTrace();
-                // }
+                try {
+                    vq.compress(imgPath);
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
             }
         });
+
+        decompressBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    vq.decompress();
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                } catch (ClassNotFoundException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+        });
+    
     
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
