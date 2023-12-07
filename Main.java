@@ -10,8 +10,8 @@ import java.io.File;
 public class Main {
     public static void main(String[] args) throws IOException, ClassNotFoundException{
         
-        int blockHeight = 6;
-        int blockWidth = 6;
+        int blockHeight = 4;
+        int blockWidth = 4;
         int codeBookSze = 8;
        
         VectorQuantizer v = new VectorQuantizer(blockHeight, blockWidth, codeBookSze);

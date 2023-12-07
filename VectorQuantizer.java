@@ -104,7 +104,7 @@ class VectorQuantizer {
                 int value = (a >> 16) & 0xFF; // Extract the red component
                 int rgb = (value << 16) | (value << 8) | value;//gray scale
                 imk.setRGB(j, i, rgb );
-                imgVec[i][j] = value;
+                imgVec[i][j] = rgb;
             }
         }
                 File fileout = new File("demo.jpg");
@@ -190,12 +190,12 @@ class VectorQuantizer {
         return newAvr;
     }
 
-    public double calculateDistance(double[][] avr, int[][] block) {
+    public long calculateDistance(double[][] avr, int[][] block) {
        
-        double distance = 0;
+        long distance = 0;
         for (int i = 0; i < avr.length; ++i) {
             for (int j = 0; j < avr.length; ++j) {
-                distance += Math.pow((avr[i][j] - block[i][j]), 2);
+                distance += (avr[i][j] - block[i][j]);
                 //System.out.println("distance: " + distance);
             }
         }
@@ -204,11 +204,11 @@ class VectorQuantizer {
 
     public int nearestDistance(Vector<double[][]> avr, int[][] block) {
 
-        double minDis = Integer.MAX_VALUE;
+        long minDis = Long.MAX_VALUE;
         int nearestIndex = -1;
         for (int i = 0; i < avr.size(); ++i) {
             double[][] t = avr.get(i);
-            double dist = calculateDistance(t, block);
+            long dist = calculateDistance(t, block);
             if (dist < minDis) {
                 minDis = dist;
                 nearestIndex = i;
