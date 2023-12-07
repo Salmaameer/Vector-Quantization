@@ -1,10 +1,4 @@
-import java.io.FileOutputStream;
-import java.util.Vector;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
 
 
 public class Main {
@@ -15,8 +9,7 @@ public class Main {
         int codeBookSze = 8;
        
         VectorQuantizer v = new VectorQuantizer(blockHeight, blockWidth, codeBookSze);
-        v.compress("/Users/salmaameer/Downloads/download (1).jpeg");
+        v.compress("download.jpg");
         v.decompress();
-        
     }
 }
