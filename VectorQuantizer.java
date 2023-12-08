@@ -1,9 +1,6 @@
-
-
 import java.util.*;
 import java.io.*;
 import javax.imageio.ImageIO;
-import javax.print.DocFlavor.INPUT_STREAM;
 import java.awt.image.BufferedImage;
 
 /**
@@ -34,13 +31,14 @@ import java.awt.image.BufferedImage;
  */
 
 class VectorQuantizer {
-    int blockHeight;
-    int blockWidth;
-    int codeBookSze;
-    int nBlocks;
-    int imgHeight;
-    int imgWidth;
-    Vector<Integer> compressedData;
+    static int blockHeight;
+    static int blockWidth;
+    public static int codeBookSze;
+    public static int nBlocks;
+    public Vector<Integer> compressedData;
+    static double[][] reconstructedImage;
+    public static int imgHeight;
+    public static int imgWidth;
 
     public VectorQuantizer(int blockh, int blockW, int codeBookSze) {
         this.blockHeight = blockh;
@@ -49,54 +47,62 @@ class VectorQuantizer {
     }
 
     public void compress(String imagePath) throws IOException {
-
-
-        //int[][] arr = {{1,2,7,9,4,11},{3,4,6,6,12,12},{4,9,15,14,9,9},{10,10,20,18,8,8},{4,3,17,16,1,4},{4,5,18,18,5,6}};
-        int[][] imagePixels = readImage(imagePath);
-        //int[][] imagePixels = arr;
-        Vector<int[][]> data = divideToblocks(imagePixels);
-        //System.out.println(nBlocks);
-        //System.out.println(data.size());
+        double[][] imagePixels = readImg(imagePath);
+        Vector<double[][]> data = divideToBlocks(imagePixels);
         double[][] average = averageBlock(data, nBlocks);
-        //printBlock(average);
         Vector<double[][]> allAverages = new Vector<>();
         allAverages.add(average);
+        allAverages = splitAverage(allAverages);
+        // System.out.println("averages size: " + allAverages.size());
+
         while (allAverages.size() != codeBookSze) {
+            // System.out.println("averages: ");
+            // for (double[][] ds : allAverages) {
+            // for (int i = 0; i < ds.length; i++) {
+            // for (int j = 0; j < ds[i].length; j++) {
+            // System.out.print(ds[i][j]);
+            // System.out.print(" ");
+            // }
+            // System.out.println();
+            // }
+            // System.out.println();
+            // }
+            allAverages = assignToAverage(data, allAverages);
             allAverages = splitAverage(allAverages);
-            assignToAverage(data, allAverages);
-        }
-        System.out.println(compressedData.size());
-        //if the nearest vector will be changed or not
-        for (int i = 0; i < 50; ++i) {
-            assignToAverage(data, allAverages);
         }
 
-       
+        // if the nearest vector will be changed or not
+        // for (int i = 0; i < 50; ++i) {
+        // assignToAverage(data, allAverages);
+        // }
 
         FileOutputStream file = new FileOutputStream("output.bin");
         ObjectOutputStream out = new ObjectOutputStream(file);
-        out.writeInt(imagePixels.length); // image height
-        out.writeInt(imagePixels[0].length); // image width
+        // out.writeInt(imagePixels.length); // image height
+        // out.writeInt(imagePixels[0].length); // image width
+
         out.writeObject(allAverages);
-        //System.out.println(compressedData.size());
         out.writeObject(compressedData);
         out.close();
     }
-    public int[][] readImage(String filePath) throws IOException {
-        // give image file as parameter to function and reads an image file and converts its pixel values to a 2D array of floats
+
+    public static double[][] readImg(String filePath) throws IOException {
+        // give image file as parameter to function and reads an image file and converts
+        // its pixel values to a 2D array of floats
         File file = new File(filePath);
         BufferedImage img;
         // built in to read image
         img = ImageIO.read(file);
         // retrive width and height of image
         int width = img.getWidth();
+        imgWidth = width;
         int height = img.getHeight();
+        imgHeight = height;
 
         int numberOfBlocks = (width * height) / codeBookSze;
         nBlocks = numberOfBlocks;
-        
         // to store pixels
-        int[][] Pixels = new int[height][width];
+        double[][] Pixels = new double[height][width];
         int RGB;
 
         // loop on each pixel of image and extract from each pixel RGB values
@@ -112,66 +118,30 @@ class VectorQuantizer {
         return Pixels;
     }
 
-    // public int[][] readImage(String imagePath) throws IOException {
-    //     BufferedImage image = null;
-    //     try {
-    //         File input_file = new File(imagePath);
-    //         image = ImageIO.read(input_file);
-    //     } catch (IOException e) {
-    //         System.out.println("Error: " + e);
-    //     }
+    public Vector<double[][]> divideToBlocks(double[][] img) {
+        Vector<double[][]> splitted = new Vector<>();
+        int numRows = img.length;
+        int numCols = img[0].length;
 
-    //     int height = image.getHeight();
-    //     int width = image.getWidth();
-    //     imgHeight = height;
-    //     imgWidth = width;
-    //     int nblock = (height / blockHeight ) * (width * blockHeight);
-    //     setnBlocks(nblock);
+        for (int i = 0; i < numRows; i += blockHeight) {
+            for (int j = 0; j < numCols; j += blockWidth) {
+                int rowEnd = Math.min(i + blockHeight, numRows);
+                int colEnd = Math.min(j + blockWidth, numCols);
+                double[][] block = new double[blockHeight][blockWidth];
 
-    //     int imgVec[][] = new int[height][width];
-    //     BufferedImage imk = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-    //     for (int i = 0; i < height; i++) {
-    //         for (int j = 0; j < width; j++) {
-    //             int a = image.getRGB(j, i);
-    //             int value = (a >> 16) & 0xFF; // Extract the red component
-    //             int rgb = (value << 16) | (value << 8) | value; // gray scale
-    //             imk.setRGB(j, i, rgb);
-    //             imgVec[i][j] = rgb;
-    //             //System.out.println(imgVec[i][j]+'&');
-    //         }
-    //     }
-    //     File fileout = new File("demo.jpg");
-
-    //     try {
-    //         ImageIO.write(imk, "jpg", fileout);
-    //     } catch (IOException e) {
-    //         e.printStackTrace();
-    //     }
-
-        
-    //     return imgVec;
-    // }
-
-    public Vector<int[][]> divideToblocks(int[][] imgVec) {
-        
-        Vector<int[][]> blocksVec = new Vector<>();
-        for (int i = 0; i + blockHeight <= imgVec.length; i += blockHeight) {
-            for (int j = 0; j + blockWidth <= imgVec[i].length; j += blockWidth) {
-                int[][] block = new int[blockHeight][blockWidth];
-                for (int x = i; x < (i + blockHeight); ++x) {
-                    for (int y = j; y < (j + blockWidth); ++y) {
-                        block[x - i][y - j] = imgVec[x][y];
+                for (int r = i; r < rowEnd; ++r) {
+                    for (int c = j; c < colEnd; ++c) {
+                        block[r - i][c - j] = img[r][c];
                     }
                 }
-                blocksVec.add(block);
+                splitted.add(block);
             }
         }
-        return blocksVec;
-
+        // System.out.println(splitted.size());
+        return splitted;
     }
 
-    public double[][] averageBlock(Vector<int[][]> vec, int nBlck) {
+    public double[][] averageBlock(Vector<double[][]> data, int nBlck) {
         double[][] result = new double[blockHeight][blockWidth];
         for (int i = 0; i < result.length; ++i) {
             for (int j = 0; j < result[i].length; ++j) {
@@ -179,30 +149,33 @@ class VectorQuantizer {
             }
         }
 
-        for (int[][] array : vec) {
+        for (double[][] array : data) {
             for (int i = 0; i < array.length; ++i) {
                 for (int j = 0; j < array[i].length; ++j) {
                     result[i][j] += array[i][j];
+                    // System.out.print(result[i][j]);
+                    // System.out.print(" ");
                 }
             }
         }
 
-        //printBlock(result);
-
+        // System.out.println("number of blocks: " + nBlck);
         for (int i = 0; i < result.length; ++i) {
             for (int j = 0; j < result[i].length; ++j) {
                 result[i][j] /= nBlck;
-                //System.out.println(result[i][j]);
             }
         }
-        //printBlock(result);
+
+        // for (int i = 0; i < result.length; ++i) {
+        // for (int j = 0; j < result[i].length; ++j) {
+        // System.out.println(result[i][j]);
+        // }
+        // }
         return result;
     }
 
     public Vector<double[][]> splitAverage(Vector<double[][]> averages) {
         Vector<double[][]> newAvr = new Vector<>();
-       
-        
         for (double[][] ds : averages) {
             double[][] temp = new double[blockHeight][blockWidth];
             for (int i = 0; i < ds.length; ++i) {
@@ -230,137 +203,207 @@ class VectorQuantizer {
 
             newAvr.add(temp);
         }
-       
         return newAvr;
     }
 
-    public long calculateDistance(double[][] avr, int[][] block) {
-
-        long distance = 0;
+    public double calculateDistance(double[][] avr, double[][] block) {
+        double distance = 0.0;
         for (int i = 0; i < avr.length; ++i) {
-            for (int j = 0; j < avr.length; ++j) {
-                distance += Math.abs((avr[i][j] - block[i][j]));
-                //System.out.println("distance: " + distance);
+            for (int j = 0; j < avr[i].length; ++j) {
+                distance += Math.pow(avr[i][j] - block[i][j], 2);
             }
         }
-        
-        return distance;
+        return Math.sqrt(distance);
     }
+    
 
-    public int nearestDistance(Vector<double[][]> avr, int[][] block) {
-
-        long minDis = Long.MAX_VALUE;
+    public int nearestDistance(Vector<double[][]> avr, double[][] block) {
+        // System.out.println("averages size: " + avr.size());
+        double minDis = Integer.MAX_VALUE;
+        // System.out.println(minDis);
         int nearestIndex = -1;
         for (int i = 0; i < avr.size(); ++i) {
             double[][] t = avr.get(i);
-            // printBlock(t);
-            // printBlock(block);
-            long dist = calculateDistance(t, block);
+            double dist = calculateDistance(t, block);
+            // System.out.println(dist);
+            // System.out.println("min dis: " + minDis);
+            // System.out.println("dis: " + dist);
             if (dist < minDis) {
+                // System.out.println("old min dist: " + minDis);
                 minDis = dist;
+                // System.out.println("new min dist: " + minDis);
                 nearestIndex = i;
+                // System.out.println("nearest index: " + nearestIndex);
             }
-            //  System.out.println("N " + nearestIndex);
         }
+        // System.out.println(nearestIndex);
         return nearestIndex;
     }
 
     // returns the new blocks after calculating avgs.
-    public Vector<double[][]> assignToAverage(Vector<int[][]> data, Vector<double[][]> averages) {
-        Vector<Integer>newcompressedData = new Vector<>();
-        // get all data assigned to the array and update averages
+    // public Vector<double[][]> assignToAverage(Vector<double[][]> data, Vector<double[][]> averages) {
+    //     compressedData = new Vector<>();
+
+    //     // get all data assigned to the array and update averages
+    //     Vector<double[][]> sum = new Vector<>();
+    //     Vector<Integer> counter = new Vector<>();
+    //     for (int i = 0; i < averages.size(); ++i) {
+    //         sum.add(new double[blockHeight][blockWidth]);
+    //         counter.add(0);
+    //     }
+
+    //     for (int i = 0; i < data.size(); ++i) {
+    //         int nearstIdx = nearestDistance(averages, data.elementAt(i));
+    //         // System.out.println("nearest index: " + nearstIdx);
+    //         this.compressedData.add(nearstIdx);
+    //         // sum all data in the same index
+    //         double[][] sumArr = sum.get(nearstIdx);
+    //         for (int k = 0; k < data.get(i).length; ++k) {
+    //             for (int j = 0; j < data.get(i)[k].length; ++j) {
+    //                 // System.out.println("b" + sumArr[k][j]);
+    //                 sumArr[k][j] += data.get(i)[k][j];
+    //             }
+    //         }
+
+    //         sum.setElementAt(sumArr, nearstIdx);
+    //         counter.setElementAt(counter.get(nearstIdx) + 1, nearstIdx); // counter ++
+    //         sumArr = null;
+    //     }
+
+    //     // cal avrage
+    //     for (int k = 0; k < sum.size(); ++k) {
+    //         for (int i = 0; i < sum.get(k).length; ++i) {
+    //             for (int j = 0; j < sum.get(k)[i].length; ++j) {
+    //                 // if the codebook does not has any vectors, can not calculate avg and just
+    //                 // remain the same.
+    //                 if (sum.get(k)[i][j] == 0) {
+    //                     sum.get(k)[i][j] = averages.get(k)[i][j];
+    //                 } else
+    //                     sum.get(k)[i][j] /= (double) counter.get(k);
+    //             }
+    //         }
+    //     }
+
+    //     // return the sum instead of this assign, because it does not
+    //     // reflect in the real averages.
+    //     return sum;
+    // }
+
+    public Vector<double[][]> assignToAverage(Vector<double[][]> data, Vector<double[][]> averages) {
+        compressedData = new Vector<>();
+        
+        // Initialize accumulators for sums and counters
         Vector<double[][]> sum = new Vector<>();
         Vector<Integer> counter = new Vector<>();
+        
+        // Initialize sum and counter vectors based on the number of averages
         for (int i = 0; i < averages.size(); ++i) {
             sum.add(new double[blockHeight][blockWidth]);
             counter.add(0);
         }
-
-        // compressedData = null;
-        for (int i = 0; i < data.size(); ++i) {
-            int nearstIdx = nearestDistance(averages, data.elementAt(i));
-            newcompressedData.add(nearstIdx);
-            // sum all data in the same index
-            double[][] sumArr = sum.get(nearstIdx);
-            for (int k = 0; k < data.get(i).length; ++k) {
-                for (int j = 0; j < data.get(i)[k].length; ++j) {
-
-                    sumArr[k][j] += data.get(i)[k][j];
-
-                }
-            }
-
-            sum.setElementAt(sumArr, nearstIdx);
-            counter.setElementAt(counter.get(nearstIdx) + 1, nearstIdx);// counter ++
-            sumArr = null;
-        }
-        this.compressedData = newcompressedData;
-
-        // cal avrage
-        for (int k = 0; k < sum.size(); ++k) {
-            for (int i = 0; i < sum.get(k).length; ++i) {
-                for (int j = 0; j < sum.get(k)[i].length; ++j) {
-                    // if the codebook does not has any vectors, can not calculate avg and just
-                    // remain the same.
-                    if (sum.get(k)[i][j] == 0) {
-                        sum.get(k)[i][j] = averages.get(k)[i][j];
-                    } else
-                        sum.get(k)[i][j] /= (double) counter.get(k);
-                }
-            }
-        }
-
     
-        // return the sum instead of this assign, because it does not
-        // reflect in the real averages.
-        return sum;
+        // Assign each block to its nearest average and update counters and sums
+        for (int i = 0; i < data.size(); ++i) {
+            int nearestIdx = nearestDistance(averages, data.elementAt(i));
+            this.compressedData.add(nearestIdx);
+            
+            double[][] block = data.get(i);
+            double[][] currentSum = sum.get(nearestIdx);
+            int currentCounter = counter.get(nearestIdx);
+            
+            // Accumulate the block values into the current sum
+            for (int k = 0; k < block.length; ++k) {
+                for (int j = 0; j < block[k].length; ++j) {
+                    currentSum[k][j] += block[k][j];
+                }
+            }
+            
+            // Increment the counter for the assigned average
+            counter.set(nearestIdx, currentCounter + 1);
+            sum.set(nearestIdx, currentSum);
+        }
+    
+        // System.out.println("compressed data: ");
+        // for(int i = 0; i < compressedData.size(); i++){
+        //     System.out.print(compressedData.get(i) + " ");
+        // }
+        // Calculate averages based on accumulated sums and counters
+        Vector<double[][]> newAverages = new Vector<>();
+        for (int k = 0; k < sum.size(); ++k) {
+            double[][] currentSum = sum.get(k);
+            int currentCounter = counter.get(k);
+            
+            // Create a new average matrix
+            double[][] newAvg = new double[blockHeight][blockWidth];
+            
+            // Calculate the average only if the counter is not zero
+            if (currentCounter != 0) {
+                for (int i = 0; i < currentSum.length; ++i) {
+                    for (int j = 0; j < currentSum[i].length; ++j) {
+                        newAvg[i][j] = currentSum[i][j] / (double) currentCounter;
+                    }
+                }
+            } else {
+                // If no blocks were assigned, retain the existing average
+                newAvg = averages.get(k);
+            }
+            
+            // Add the new average to the list of averages
+            newAverages.add(newAvg);
+        }
+    
+        return newAverages;
     }
+    
 
     public void decompress() throws IOException, ClassNotFoundException {
-
         FileInputStream fis = new FileInputStream("output.bin");
         ObjectInputStream in = new ObjectInputStream(fis);
-        int imgHeight = in.readInt();
-        int imgWidth = in.readInt();
         Vector<double[][]> codebook = (Vector<double[][]>) in.readObject();
         Vector<Integer> compImage = (Vector<Integer>) in.readObject();
         in.close();
 
-        
-        //System.out.println(compImage.size());
+        BufferedImage image = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
 
-        Vector<double[][]> image = new Vector<>();
-        for (int i = 0; i < compImage.size(); i++) {
-            //System.out.println(compImage.get(i));
-            double[][] temp = codebook.get(compImage.get(i));
-            //printBlock(temp);
-            image.add(temp);
-        }
-
-        File fileout = new File("dImage.jpg");
-        BufferedImage image2 = new BufferedImage(imgWidth, imgHeight,
-                BufferedImage.TYPE_INT_RGB);
-
-    
-        for (double[][] ds : image) {
-            for (int x = 0; x < ds.length; x++) {
-                for (int y = 0; y < ds[x].length; y++) {
-
-                    int value = (int) ds[x][y];
-                    int rgb = (value << 16) | (value << 8) | value;
-                    //System.out.println(value + "&");
-                    image2.setRGB(y, x, value);
+        int index = 0;
+        for (int y = 0; y < imgHeight; y += blockHeight) {
+            for (int x = 0; x < imgWidth; x += blockWidth) {
+                if (index >= compImage.size()) {
+                    break;
                 }
+
+                int[][] blockPixels = new int[blockHeight][blockWidth];
+                double[][] codebookEntry = codebook.get(compImage.get(index));
+
+                // Convert codebook entry to pixel values
+                for (int i = 0; i < blockHeight; i++) {
+                    for (int j = 0; j < blockWidth; j++) {
+                        int value = (int) codebookEntry[i][j];
+                        int rgb = (value << 16) | (value << 8) | value;
+                        blockPixels[i][j] = rgb;
+                    }
+                }
+
+                // Set pixels in the image
+                for (int i = 0; i < blockHeight; i++) {
+                    for (int j = 0; j < blockWidth; j++) {
+                        if (x + j < imgWidth && y + i < imgHeight) {
+                            image.setRGB(x + j, y + i, blockPixels[i][j]);
+                        }
+                    }
+                }
+                index++;
             }
         }
+
+        // Save the reconstructed image
+        File fileout = new File("decompressedImage.jpg");
         try {
-            ImageIO.write(image2, "jpg", fileout);
+            ImageIO.write(image, "jpg", fileout);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
-
 
     public int getnBlocks() {
         return nBlocks;
@@ -386,27 +429,4 @@ class VectorQuantizer {
         // Vectors are equal
         return true;
     }
-
-    void printBlock(double[][] block){
-       for (int i = 0; i < block.length; ++i) {
-                for (int j = 0; j < block[i].length; ++j) {
-                    System.out.print(block[i][j] + " ");
-                }
-            System.out.println();
-            }
-
-            System.out.println();
-    }
-    void printBlock(int[][] block){
-       for (int i = 0; i < block.length; ++i) {
-                for (int j = 0; j < block[i].length; ++j) {
-                    System.out.print(block[i][j] + " ");
-                }
-            System.out.println();
-            }
-
-            System.out.println();
-    }
-    
-
 }
