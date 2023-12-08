@@ -53,33 +53,23 @@ class VectorQuantizer {
         Vector<double[][]> allAverages = new Vector<>();
         allAverages.add(average);
         allAverages = splitAverage(allAverages);
-        // System.out.println("averages size: " + allAverages.size());
 
         while (allAverages.size() != codeBookSze) {
-            // System.out.println("averages: ");
-            // for (double[][] ds : allAverages) {
-            // for (int i = 0; i < ds.length; i++) {
-            // for (int j = 0; j < ds[i].length; j++) {
-            // System.out.print(ds[i][j]);
-            // System.out.print(" ");
-            // }
-            // System.out.println();
-            // }
-            // System.out.println();
-            // }
             allAverages = assignToAverage(data, allAverages);
             allAverages = splitAverage(allAverages);
         }
 
         // if the nearest vector will be changed or not
-        // for (int i = 0; i < 50; ++i) {
-        // assignToAverage(data, allAverages);
-        // }
+        for (int i = 0; i < 50; ++i) {
+            Vector<double[][]> prevAvgs = allAverages;
+
+            allAverages = assignToAverage(data, allAverages);
+            if(prevAvgs == allAverages)
+                break;
+        }
 
         FileOutputStream file = new FileOutputStream("output.bin");
         ObjectOutputStream out = new ObjectOutputStream(file);
-        // out.writeInt(imagePixels.length); // image height
-        // out.writeInt(imagePixels[0].length); // image width
 
         out.writeObject(allAverages);
         out.writeObject(compressedData);
@@ -137,7 +127,6 @@ class VectorQuantizer {
                 splitted.add(block);
             }
         }
-        // System.out.println(splitted.size());
         return splitted;
     }
 
@@ -153,24 +142,15 @@ class VectorQuantizer {
             for (int i = 0; i < array.length; ++i) {
                 for (int j = 0; j < array[i].length; ++j) {
                     result[i][j] += array[i][j];
-                    // System.out.print(result[i][j]);
-                    // System.out.print(" ");
                 }
             }
         }
 
-        // System.out.println("number of blocks: " + nBlck);
         for (int i = 0; i < result.length; ++i) {
             for (int j = 0; j < result[i].length; ++j) {
                 result[i][j] /= nBlck;
             }
         }
-
-        // for (int i = 0; i < result.length; ++i) {
-        // for (int j = 0; j < result[i].length; ++j) {
-        // System.out.println(result[i][j]);
-        // }
-        // }
         return result;
     }
 
@@ -218,76 +198,19 @@ class VectorQuantizer {
     
 
     public int nearestDistance(Vector<double[][]> avr, double[][] block) {
-        // System.out.println("averages size: " + avr.size());
         double minDis = Integer.MAX_VALUE;
-        // System.out.println(minDis);
         int nearestIndex = -1;
         for (int i = 0; i < avr.size(); ++i) {
             double[][] t = avr.get(i);
             double dist = calculateDistance(t, block);
-            // System.out.println(dist);
-            // System.out.println("min dis: " + minDis);
-            // System.out.println("dis: " + dist);
             if (dist < minDis) {
-                // System.out.println("old min dist: " + minDis);
                 minDis = dist;
-                // System.out.println("new min dist: " + minDis);
                 nearestIndex = i;
-                // System.out.println("nearest index: " + nearestIndex);
             }
         }
-        // System.out.println(nearestIndex);
         return nearestIndex;
     }
 
-    // returns the new blocks after calculating avgs.
-    // public Vector<double[][]> assignToAverage(Vector<double[][]> data, Vector<double[][]> averages) {
-    //     compressedData = new Vector<>();
-
-    //     // get all data assigned to the array and update averages
-    //     Vector<double[][]> sum = new Vector<>();
-    //     Vector<Integer> counter = new Vector<>();
-    //     for (int i = 0; i < averages.size(); ++i) {
-    //         sum.add(new double[blockHeight][blockWidth]);
-    //         counter.add(0);
-    //     }
-
-    //     for (int i = 0; i < data.size(); ++i) {
-    //         int nearstIdx = nearestDistance(averages, data.elementAt(i));
-    //         // System.out.println("nearest index: " + nearstIdx);
-    //         this.compressedData.add(nearstIdx);
-    //         // sum all data in the same index
-    //         double[][] sumArr = sum.get(nearstIdx);
-    //         for (int k = 0; k < data.get(i).length; ++k) {
-    //             for (int j = 0; j < data.get(i)[k].length; ++j) {
-    //                 // System.out.println("b" + sumArr[k][j]);
-    //                 sumArr[k][j] += data.get(i)[k][j];
-    //             }
-    //         }
-
-    //         sum.setElementAt(sumArr, nearstIdx);
-    //         counter.setElementAt(counter.get(nearstIdx) + 1, nearstIdx); // counter ++
-    //         sumArr = null;
-    //     }
-
-    //     // cal avrage
-    //     for (int k = 0; k < sum.size(); ++k) {
-    //         for (int i = 0; i < sum.get(k).length; ++i) {
-    //             for (int j = 0; j < sum.get(k)[i].length; ++j) {
-    //                 // if the codebook does not has any vectors, can not calculate avg and just
-    //                 // remain the same.
-    //                 if (sum.get(k)[i][j] == 0) {
-    //                     sum.get(k)[i][j] = averages.get(k)[i][j];
-    //                 } else
-    //                     sum.get(k)[i][j] /= (double) counter.get(k);
-    //             }
-    //         }
-    //     }
-
-    //     // return the sum instead of this assign, because it does not
-    //     // reflect in the real averages.
-    //     return sum;
-    // }
 
     public Vector<double[][]> assignToAverage(Vector<double[][]> data, Vector<double[][]> averages) {
         compressedData = new Vector<>();
@@ -323,10 +246,6 @@ class VectorQuantizer {
             sum.set(nearestIdx, currentSum);
         }
     
-        // System.out.println("compressed data: ");
-        // for(int i = 0; i < compressedData.size(); i++){
-        //     System.out.print(compressedData.get(i) + " ");
-        // }
         // Calculate averages based on accumulated sums and counters
         Vector<double[][]> newAverages = new Vector<>();
         for (int k = 0; k < sum.size(); ++k) {
@@ -356,7 +275,7 @@ class VectorQuantizer {
     }
     
 
-    public void decompress() throws IOException, ClassNotFoundException {
+    public String decompress() throws IOException, ClassNotFoundException {
         FileInputStream fis = new FileInputStream("output.bin");
         ObjectInputStream in = new ObjectInputStream(fis);
         Vector<double[][]> codebook = (Vector<double[][]>) in.readObject();
@@ -403,30 +322,10 @@ class VectorQuantizer {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public int getnBlocks() {
-        return nBlocks;
+        return "decompressedImage.jpg";
     }
 
     public void setnBlocks(int nBlocks) {
         this.nBlocks = nBlocks;
-    }
-
-    public Vector<Integer> getCompressedData() {
-        return this.compressedData;
-    }
-
-    public Boolean equal(Vector<double[][]> lastAvgs, Vector<double[][]> allAvgs) {
-        for (int i = 0; i < allAvgs.size(); i++) {
-            double[][] array1 = allAvgs.get(i);
-            double[][] array2 = lastAvgs.get(i);
-
-            if (array1.length != array2.length || !Arrays.deepEquals(array1, array2)) {
-                return false;
-            }
-        }
-        // Vectors are equal
-        return true;
     }
 }
