@@ -71,6 +71,9 @@ class VectorQuantizer {
         FileOutputStream file = new FileOutputStream("output.bin");
         ObjectOutputStream out = new ObjectOutputStream(file);
 
+         out.writeInt(imgWidth);
+        out.writeInt(imgHeight);
+        out.writeInt(blockHeight);
         out.writeObject(allAverages);
         out.writeObject(compressedData);
         out.close();
@@ -84,11 +87,13 @@ class VectorQuantizer {
         // built in to read image
         img = ImageIO.read(file);
         // retrive width and height of image
+
         int width = img.getWidth();
         imgWidth = width;
         int height = img.getHeight();
         imgHeight = height;
 
+    
         int numberOfBlocks = (width * height) / codeBookSze;
         nBlocks = numberOfBlocks;
         // to store pixels
@@ -278,6 +283,9 @@ class VectorQuantizer {
     public String decompress() throws IOException, ClassNotFoundException {
         FileInputStream fis = new FileInputStream("output.bin");
         ObjectInputStream in = new ObjectInputStream(fis);
+        int imgWdth = in.readInt();
+        int imgHght = in.readInt();
+        int blockSz = in.readInt();
         Vector<double[][]> codebook = (Vector<double[][]>) in.readObject();
         Vector<Integer> compImage = (Vector<Integer>) in.readObject();
         in.close();
@@ -285,18 +293,18 @@ class VectorQuantizer {
         BufferedImage image = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_RGB);
 
         int index = 0;
-        for (int y = 0; y < imgHeight; y += blockHeight) {
-            for (int x = 0; x < imgWidth; x += blockWidth) {
+        for (int y = 0; y < imgHght; y += blockSz) {
+            for (int x = 0; x < imgWdth; x += blockSz) {
                 if (index >= compImage.size()) {
                     break;
                 }
 
-                int[][] blockPixels = new int[blockHeight][blockWidth];
+                int[][] blockPixels = new int[blockSz][blockSz];
                 double[][] codebookEntry = codebook.get(compImage.get(index));
 
                 // Convert codebook entry to pixel values
-                for (int i = 0; i < blockHeight; i++) {
-                    for (int j = 0; j < blockWidth; j++) {
+                for (int i = 0; i < blockSz; i++) {
+                    for (int j = 0; j < blockSz; j++) {
                         int value = (int) codebookEntry[i][j];
                         int rgb = (value << 16) | (value << 8) | value;
                         blockPixels[i][j] = rgb;
@@ -304,9 +312,9 @@ class VectorQuantizer {
                 }
 
                 // Set pixels in the image
-                for (int i = 0; i < blockHeight; i++) {
-                    for (int j = 0; j < blockWidth; j++) {
-                        if (x + j < imgWidth && y + i < imgHeight) {
+                for (int i = 0; i < blockSz; i++) {
+                    for (int j = 0; j < blockSz; j++) {
+                        if (x + j < imgWdth && y + i < imgHght) {
                             image.setRGB(x + j, y + i, blockPixels[i][j]);
                         }
                     }
